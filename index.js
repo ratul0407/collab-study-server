@@ -2,13 +2,18 @@ require("dotenv").config();
 const cors = require("cors");
 const express = require("express");
 const { MongoClient, ServerApiVersion } = require("mongodb");
-
+const jwt = require("jsonwebtoken");
 const app = express();
 const port = process.env.PORT || 9000;
 
-console.log(process.env.DB_USER, process.env.DB_PASS);
+const corsOptions = {
+  origin: ["http://localhost:5173", "http://localhost:5174"],
+  credentials: true,
+  optionSuccessStatus: 200,
+};
+
 //middlewares
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@ratul.gtek0.mongodb.net/?retryWrites=true&w=majority&appName=Ratul`;
@@ -22,9 +27,43 @@ const client = new MongoClient(uri, {
   },
 });
 
+const verifyToken = async (req, res, next) => {
+  const token = req.headers.authorization;
+  if (!token) {
+    return res.status(401).send({ message: "Forbidden Access!" });
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: "Forbidden Access!" });
+    }
+    req.decode = decoded;
+    next();
+  });
+};
 async function run() {
   try {
+    const database = client.db("studyHouse");
+    const usersCollection = database.collection("users");
     // Connect the client to the server	(optional starting in v4.7)
+
+    app.post("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const user = req.body;
+
+      const isExist = await usersCollection.findOne(query);
+      if (isExist) return res.send(isExist);
+      const result = await usersCollection.insertOne({ ...user });
+      res.send(result);
+    });
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      console.log(user);
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
+      });
+      res.send({ token });
+    });
     await client.connect();
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
