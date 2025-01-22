@@ -44,8 +44,9 @@ async function run() {
   try {
     const database = client.db("studyHouse");
     const usersCollection = database.collection("users");
-    // Connect the client to the server	(optional starting in v4.7)
+    const sessionsCollection = database.collection("sessions");
 
+    //add user to the database
     app.post("/users/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email };
@@ -56,6 +57,14 @@ async function run() {
       const result = await usersCollection.insertOne({ ...user });
       res.send(result);
     });
+
+    //get access to users role
+    app.get("/users/role/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const result = await usersCollection.findOne(query);
+      res.send({ role: result.role });
+    });
     app.post("/jwt", async (req, res) => {
       const user = req.body;
       console.log(user);
@@ -63,6 +72,12 @@ async function run() {
         expiresIn: "1h",
       });
       res.send({ token });
+    });
+
+    // add a new study session
+
+    app.post("/add-session", async (req, res) => {
+      const sessionData = req.body;
     });
     await client.connect();
     // Send a ping to confirm a successful connection
