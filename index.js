@@ -57,6 +57,20 @@ async function run() {
         return res.status(403).send("Forbidden Access! Tutor only actions!");
       next();
     };
+
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.user?.email;
+      const query = { email };
+      const result = await usersCollection.findOne(query);
+      if (!result || result?.role !== "admin")
+        return res.status(403).send("Forbidden Access! Admin only actions!");
+      next();
+    };
+    //get all users
+    app.get("/users", verifyToken, verifyAdmin, async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
     //add user to the database
     app.post("/users/:email", async (req, res) => {
       const email = req.params.email;
