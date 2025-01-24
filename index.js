@@ -98,6 +98,14 @@ async function run() {
       const result = await notesCollection.insertOne(note);
       res.send(result);
     });
+
+    //get all the notes for a specific user
+    app.get("/get-notes/:email", verifyToken, async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const result = await notesCollection.find(query).toArray();
+      res.send(result);
+    });
     await client.connect();
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
