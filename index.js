@@ -46,6 +46,7 @@ async function run() {
     const database = client.db("studyHouse");
     const usersCollection = database.collection("users");
     const sessionsCollection = database.collection("sessions");
+    const notesCollection = database.collection("notes");
 
     //verify tutor
     const verifyTutor = async (req, res, next) => {
@@ -91,6 +92,12 @@ async function run() {
       res.send(result);
     });
 
+    //add a new note to the database
+    app.post("/add-note", verifyToken, async (req, res) => {
+      const note = req.body;
+      const result = await notesCollection.insertOne(note);
+      res.send(result);
+    });
     await client.connect();
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
