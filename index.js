@@ -93,14 +93,14 @@ async function run() {
     });
 
     //add a new note to the database
-    app.post("/add-note", verifyToken, async (req, res) => {
+    app.post("/notes", verifyToken, async (req, res) => {
       const note = req.body;
       const result = await notesCollection.insertOne(note);
       res.send(result);
     });
 
     //get all the notes for a specific user
-    app.get("/get-notes/:email", verifyToken, async (req, res) => {
+    app.get("/notes/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       const query = { email };
       const result = await notesCollection.find(query).toArray();
@@ -108,7 +108,7 @@ async function run() {
     });
 
     //update a specific note
-    app.patch("/update-note/:id", verifyToken, async (req, res) => {
+    app.patch("notes/:id", verifyToken, async (req, res) => {
       const { note } = req.body;
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -120,6 +120,13 @@ async function run() {
       };
       console.log(note);
       const result = await notesCollection.updateOne(query, updatedDoc);
+      res.send(result);
+    });
+
+    app.delete("/notes/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await notesCollection.deleteOne(query);
       res.send(result);
     });
     await client.connect();
