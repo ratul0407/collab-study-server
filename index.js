@@ -1,7 +1,7 @@
 require("dotenv").config();
 const cors = require("cors");
 const express = require("express");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const jwt = require("jsonwebtoken");
 const app = express();
 const port = process.env.PORT || 9000;
@@ -104,6 +104,22 @@ async function run() {
       const email = req.params.email;
       const query = { email };
       const result = await notesCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    //update a specific note
+    app.patch("/update-note/:id", verifyToken, async (req, res) => {
+      const { note } = req.body;
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          title: note.title,
+          description: note.description,
+        },
+      };
+      console.log(note);
+      const result = await notesCollection.updateOne(query, updatedDoc);
       res.send(result);
     });
     await client.connect();
