@@ -29,6 +29,7 @@ const client = new MongoClient(uri, {
 
 const verifyToken = async (req, res, next) => {
   const token = req.headers.authorization;
+
   if (!token) {
     return res.status(401).send({ message: "Forbidden Access!" });
   }
@@ -36,7 +37,7 @@ const verifyToken = async (req, res, next) => {
     if (err) {
       return res.status(401).send({ message: "Forbidden Access!" });
     }
-    req.decode = decoded;
+    req.user = decoded;
     next();
   });
 };
@@ -46,6 +47,15 @@ async function run() {
     const usersCollection = database.collection("users");
     const sessionsCollection = database.collection("sessions");
 
+    //verify tutor
+    const verifyTutor = async (req, res, next) => {
+      const email = req.user?.email;
+      const query = { email };
+      const result = await usersCollection.findOne(query);
+      if (!result || result?.role !== "tutor")
+        return res.status(403).send("Forbidden Access! Tutor only actions!");
+      next();
+    };
     //add user to the database
     app.post("/users/:email", async (req, res) => {
       const email = req.params.email;
@@ -63,11 +73,10 @@ async function run() {
       const email = req.params.email;
       const query = { email };
       const result = await usersCollection.findOne(query);
-      res.send({ role: result.role });
+      res.send({ role: result?.role });
     });
     app.post("/jwt", async (req, res) => {
       const user = req.body;
-      console.log(user);
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn: "1h",
       });
@@ -76,9 +85,12 @@ async function run() {
 
     // add a new study session
 
-    app.post("/add-session", async (req, res) => {
-      const sessionData = req.body;
+    app.post("/add-session", verifyToken, verifyTutor, async (req, res) => {
+      const session = req.body;
+      const result = await sessionsCollection.insertOne(session);
+      res.send(result);
     });
+
     await client.connect();
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
