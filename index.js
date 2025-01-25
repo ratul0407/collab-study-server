@@ -67,10 +67,14 @@ async function run() {
       next();
     };
     //get all users
-    app.get("/users", verifyToken, verifyAdmin, async (req, res) => {
-      const result = await usersCollection.find().toArray();
+    app.get("/users/:email", verifyToken, verifyAdmin, async (req, res) => {
+      const email = req.params.email;
+      const query = { email: { $ne: email } };
+      const result = await usersCollection.find(query).toArray();
       res.send(result);
     });
+
+    //
     //add user to the database
     app.post("/users/:email", async (req, res) => {
       const email = req.params.email;
