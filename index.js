@@ -122,6 +122,13 @@ async function run() {
       res.send(result);
     });
 
+    //get study sessions based on an email
+    app.get("/study-session/:email", verifyToken, async (req, res) => {
+      const email = req.params.email;
+      const query = { "tutor-email": email };
+      const result = await sessionsCollection.find(query).toArray();
+      res.send(result);
+    });
     //add a new note to the database
     app.post("/notes", verifyToken, async (req, res) => {
       const note = req.body;
