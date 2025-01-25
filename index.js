@@ -69,15 +69,27 @@ async function run() {
     //get all users
     app.get("/users/:email", verifyToken, verifyAdmin, async (req, res) => {
       const email = req.params.email;
+      const page = parseInt(req.query.page);
+      const limit = parseInt(req.query.limit);
+      console.log(page, limit);
       const query = { email: { $ne: email } };
-      const result = await usersCollection.find(query).toArray();
+      const result = await usersCollection
+        .find(query)
+        .skip(page * limit)
+        .limit(limit)
+        .toArray();
       res.send(result);
     });
 
-    //
+    //get users count
+    app.get("/usersCount", verifyToken, verifyAdmin, async (req, res) => {
+      const count = await usersCollection.estimatedDocumentCount();
+      res.send({ count });
+    });
     //add user to the database
     app.post("/users/:email", async (req, res) => {
       const email = req.params.email;
+
       const query = { email };
       const user = req.body;
 
