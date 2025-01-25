@@ -71,8 +71,32 @@ async function run() {
       const email = req.params.email;
       const page = parseInt(req.query.page);
       const limit = parseInt(req.query.limit);
-      console.log(page, limit);
-      const query = { email: { $ne: email } };
+      const search = req.query.search;
+
+      const query = {
+        $and: [
+          {
+            email: { $ne: email }, // Exclude the specified email
+          },
+          {
+            $or: [
+              {
+                email: {
+                  $regex: search,
+                  $options: "i", // Case-insensitive search in email
+                },
+              },
+              {
+                name: {
+                  $regex: search,
+                  $options: "i", // Case-insensitive search in name
+                },
+              },
+            ],
+          },
+        ],
+      };
+
       const result = await usersCollection
         .find(query)
         .skip(page * limit)
