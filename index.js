@@ -153,6 +153,29 @@ async function run() {
       const result = await sessionsCollection.find(query).toArray();
       res.send(result);
     });
+
+    //get all sessions
+    app.get("/sessions", verifyToken, verifyAdmin, async (req, res) => {
+      const result = await sessionsCollection.find().toArray();
+      res.send(result);
+    });
+
+    //update sessions status and price
+    app.patch("/session/:id", verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const status = req.body.status;
+      const fee = req.body.fee;
+      const updatedDoc = {
+        $set: {
+          status: status,
+          fee: fee,
+        },
+      };
+
+      const result = await sessionsCollection.updateOne(query, updatedDoc);
+      res.send(result);
+    });
     //add a new note to the database
     app.post("/notes", verifyToken, async (req, res) => {
       const note = req.body;
