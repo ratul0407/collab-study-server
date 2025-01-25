@@ -138,6 +138,20 @@ async function run() {
       res.send({ token });
     });
 
+    //update users role
+    app.post("/users/role/:id", verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const { role } = req.body;
+      console.log(role);
+      const query = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          role: role,
+        },
+      };
+      const result = await usersCollection.updateOne(query, updatedDoc);
+      res.send(result);
+    });
     // add a new study session
 
     app.post("/add-session", verifyToken, verifyTutor, async (req, res) => {
