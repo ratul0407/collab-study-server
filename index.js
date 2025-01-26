@@ -48,7 +48,7 @@ async function run() {
     const sessionsCollection = database.collection("sessions");
     const notesCollection = database.collection("notes");
     const rejectSessionsCollection = database.collection("rejections");
-
+    const bookedSessionCollection = database.collection("bookedSession");
     //verify tutor
     const verifyTutor = async (req, res, next) => {
       const email = req.user?.email;
@@ -164,7 +164,7 @@ async function run() {
     //get study sessions based on an email
     app.get("/study-session/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
-      const query = { "tutor-email": email };
+      const query = { tutor_email: email };
       const result = await sessionsCollection.find(query).toArray();
       res.send(result);
     });
@@ -196,7 +196,7 @@ async function run() {
     });
 
     //get 6 sessions for home page
-    app.get("/sessions-home", verifyToken, async (req, res) => {
+    app.get("/sessions-home", async (req, res) => {
       const query = { status: "Approved" };
       const result = await sessionsCollection.find(query).limit(6).toArray();
       res.send(result);
@@ -218,6 +218,13 @@ async function run() {
       res.send(result);
     });
 
+    //get a single study session
+    app.get("/session/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await sessionsCollection.findOne(query);
+      res.send(result);
+    });
     // reject a session
     app.post(
       "/reject-session/:id",
@@ -244,6 +251,14 @@ async function run() {
         res.send(result);
       }
     );
+
+    //get all  tutors
+
+    app.get("/tutors", async (req, res) => {
+      const query = { role: "tutor" };
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
     //add a new note to the database
     app.post("/notes", verifyToken, async (req, res) => {
       const note = req.body;
@@ -274,11 +289,26 @@ async function run() {
       const result = await notesCollection.updateOne(query, updatedDoc);
       res.send(result);
     });
-
+    // delete a note
     app.delete("/notes/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await notesCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    //book a session
+    app.post("/booked-session", verifyToken, async (req, res) => {
+      const session = req.body;
+      const result = await bookedSessionCollection.insertOne(session);
+      res.send(result);
+    });
+
+    //get booked sessions based on email
+    app.get("/booked-session/:email", verifyToken, async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const result = await bookedSessionCollection.find(query).toArray();
       res.send(result);
     });
     await client.connect();
