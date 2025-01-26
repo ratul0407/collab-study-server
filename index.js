@@ -47,7 +47,7 @@ async function run() {
     const usersCollection = database.collection("users");
     const sessionsCollection = database.collection("sessions");
     const notesCollection = database.collection("notes");
-    const rejectionReasons = database.collection("rejections");
+    const rejectSessionsCollection = database.collection("rejections");
 
     //verify tutor
     const verifyTutor = async (req, res, next) => {
@@ -211,6 +211,33 @@ async function run() {
       const result = await sessionsCollection.updateOne(query, updatedDoc);
       res.send(result);
     });
+
+    // reject a session
+    app.post(
+      "/reject-session/:id",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const id = req.params.id;
+        const status = req.body.status;
+        const reason = req.body.reason;
+        const feedback = req.body.feedback;
+        const query = { _id: new ObjectId(id) };
+        const updatedDoc = {
+          $set: {
+            status: status,
+          },
+        };
+
+        const session = await sessionsCollection.updateOne(query, updatedDoc);
+        const result = await rejectSessionsCollection.insertOne({
+          sessionId: id,
+          feedback,
+          reason,
+        });
+        res.send(result);
+      }
+    );
     //add a new note to the database
     app.post("/notes", verifyToken, async (req, res) => {
       const note = req.body;
