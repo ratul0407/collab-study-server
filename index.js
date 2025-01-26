@@ -195,6 +195,12 @@ async function run() {
       res.send(result);
     });
 
+    //get 6 sessions for home page
+    app.get("/sessions-home", verifyToken, async (req, res) => {
+      const query = { status: "Approved" };
+      const result = await sessionsCollection.find(query).limit(6).toArray();
+      res.send(result);
+    });
     //update sessions status and price
     app.patch("/session/:id", verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
