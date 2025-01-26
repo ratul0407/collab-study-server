@@ -47,6 +47,7 @@ async function run() {
     const usersCollection = database.collection("users");
     const sessionsCollection = database.collection("sessions");
     const notesCollection = database.collection("notes");
+    const rejectionReasons = database.collection("rejections");
 
     //verify tutor
     const verifyTutor = async (req, res, next) => {
@@ -170,7 +171,27 @@ async function run() {
 
     //get all sessions
     app.get("/sessions", verifyToken, verifyAdmin, async (req, res) => {
-      const result = await sessionsCollection.find().toArray();
+      const groupedSessions = await sessionsCollection
+        .aggregate([
+          {
+            $group: {
+              _id: "$status",
+              sessions: { $push: "$$ROOT" },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              status: "$_id",
+              sessions: 1,
+            },
+          },
+        ])
+        .toArray();
+      const result = {};
+      groupedSessions.forEach((group) => {
+        result[group.status] = group.sessions;
+      });
       res.send(result);
     });
 
