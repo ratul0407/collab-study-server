@@ -413,6 +413,14 @@ async function run() {
       const result = await materialsCollection.updateOne(query, updatedDoc);
       res.send(result);
     });
+
+    //delete a specific material
+    app.delete("/materials/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await materialsCollection.deleteOne(query);
+      res.send(result);
+    });
     await client.connect();
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
