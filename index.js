@@ -383,8 +383,34 @@ async function run() {
     //add a new material
     app.post("/materials", verifyToken, verifyTutor, async (req, res) => {
       const material = req.body;
-
       const result = await materialsCollection.insertOne(material);
+      res.send(result);
+    });
+
+    //get uploaded materials based on email
+    app.get("/materials/:email", verifyToken, verifyTutor, async (req, res) => {
+      const email = req.params.email;
+      console.log(email);
+      const query = { tutor: email };
+      const result = await materialsCollection.find(query).toArray();
+      console.log(result);
+      res.send(result);
+    });
+
+    //update a specific material
+    app.patch("/material/:id", verifyToken, verifyTutor, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const material = req.body;
+      console.log(material);
+      const updatedDoc = {
+        $set: {
+          image: material.image,
+          link: material.link,
+          title: material.title,
+        },
+      };
+      const result = await materialsCollection.updateOne(query, updatedDoc);
       res.send(result);
     });
     await client.connect();
