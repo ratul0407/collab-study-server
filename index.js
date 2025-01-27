@@ -47,7 +47,6 @@ async function run() {
     const usersCollection = database.collection("users");
     const sessionsCollection = database.collection("sessions");
     const notesCollection = database.collection("notes");
-    const rejectSessionsCollection = database.collection("rejections");
     const bookedSessionCollection = database.collection("bookedSession");
     const reviewsCollection = database.collection("reviews");
     const materialsCollection = database.collection("materials");
@@ -72,10 +71,10 @@ async function run() {
 
     const verifyApproval = async (req, res, next) => {
       const email = req.user?.email;
-      console.log(email);
+
       const query = { email };
       const result = await usersCollection.findOne(query);
-      console.log(result);
+
       if (result?.role !== "tutor" && result?.role !== "admin") {
         res.status(403).send("Forbidden Access!");
       }
@@ -157,7 +156,6 @@ async function run() {
     app.post("/users/role/:id", verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const { role } = req.body;
-      console.log(role);
       const query = { _id: new ObjectId(id) };
       const updatedDoc = {
         $set: {
@@ -215,13 +213,53 @@ async function run() {
       const result = await sessionsCollection.find(query).limit(6).toArray();
       res.send(result);
     });
+
+    //update a session
+    app.patch(
+      "/update-session/:id",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const {
+          title,
+          reg_start,
+          reg_end,
+          class_start,
+          class_end,
+          fee,
+          description,
+          hours,
+          mins,
+          img,
+        } = req.body;
+
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const updatedDoc = {
+          $set: {
+            title: title,
+            reg_start: reg_start,
+            reg_end: reg_end,
+            class_start: class_start,
+            class_end: class_end,
+            fee: fee,
+            description: description,
+            hours: hours,
+            mins: mins,
+          },
+        };
+        if (img) updatedDoc.$set.img = img;
+        const result = await sessionsCollection.updateOne(query, updatedDoc);
+        res.send(result);
+      }
+    );
     //update sessions status and price
     app.patch("/session/:id", verifyToken, verifyApproval, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const status = req.body.status;
       const fee = req.body.fee;
-      console.log(status, fee);
+
       let updatedDoc;
       if (!fee) {
         updatedDoc = {
@@ -251,28 +289,27 @@ async function run() {
     });
 
     // reject a session
-    app.post(
+    app.patch(
       "/reject-session/:id",
       verifyToken,
       verifyAdmin,
       async (req, res) => {
         const id = req.params.id;
-        const status = req.body.status;
-        const reason = req.body.reason;
-        const feedback = req.body.feedback;
+        const { status, reason, feedback } = req.body;
         const query = { _id: new ObjectId(id) };
         const updatedDoc = {
           $set: {
             status: status,
+            rejection: { reason, feedback },
           },
         };
+        const options = { upsert: true };
 
-        const session = await sessionsCollection.updateOne(query, updatedDoc);
-        const result = await rejectSessionsCollection.insertOne({
-          sessionId: id,
-          feedback,
-          reason,
-        });
+        const result = await sessionsCollection.updateOne(
+          query,
+          updatedDoc,
+          options
+        );
         res.send(result);
       }
     );
