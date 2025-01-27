@@ -49,6 +49,7 @@ async function run() {
     const notesCollection = database.collection("notes");
     const rejectSessionsCollection = database.collection("rejections");
     const bookedSessionCollection = database.collection("bookedSession");
+    const reviewsCollection = database.collection("reviews");
     //verify tutor
     const verifyTutor = async (req, res, next) => {
       const email = req.user?.email;
@@ -225,6 +226,7 @@ async function run() {
       const result = await sessionsCollection.findOne(query);
       res.send(result);
     });
+
     // reject a session
     app.post(
       "/reject-session/:id",
@@ -306,14 +308,15 @@ async function run() {
         return res
           .status(409)
           .send({ message: "You have already booked this session" });
+
       const result = await bookedSessionCollection.insertOne(session);
-      res.send({ message: "Session Booked" });
+      res.send(result);
     });
 
     //get booked sessions based on email
     app.get("/booked-session/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
-      console.log(email);
+
       const result = await bookedSessionCollection
         .aggregate([
           {
@@ -350,11 +353,29 @@ async function run() {
           {
             $project: {
               sessionData: 0,
+              sessionIdObject: 0,
             },
           },
         ])
         .toArray();
 
+      res.send(result);
+    });
+
+    //add a new review
+
+    app.post("/reviews", verifyToken, async (req, res) => {
+      const review = req.body;
+      const { rating, session } = req.body;
+      console.log(rating, session);
+      await sessionsCollection.updateOne(
+        {
+          _id: new ObjectId(session),
+        },
+        { $inc: { rating: 1 } }
+      );
+
+      const result = await reviewsCollection.insertOne(review);
       res.send(result);
     });
     await client.connect();
