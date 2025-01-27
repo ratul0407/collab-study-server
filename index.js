@@ -5,6 +5,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const jwt = require("jsonwebtoken");
 const app = express();
 const port = process.env.PORT || 9000;
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const corsOptions = {
   origin: ["http://localhost:5173", "http://localhost:5174"],
@@ -369,8 +370,12 @@ async function run() {
     //book a session
     app.post("/booked-session", verifyToken, async (req, res) => {
       const session = req.body;
-      const student = req.body.student;
-      const alreadyBooked = await bookedSessionCollection.findOne({ student });
+
+      const { student, sessionId } = req.body;
+      const alreadyBooked = await bookedSessionCollection.findOne({
+        student,
+        sessionId,
+      });
       if (alreadyBooked)
         return res
           .status(409)
@@ -534,6 +539,32 @@ async function run() {
         res.send(result);
       }
     );
+
+    //create payment intent
+    app.post("/create-payment-intent", async (req, res) => {
+      console.log(req.body);
+      const { sessionId, student } = req.body;
+      const alreadyBooked = await bookedSessionCollection.findOne({
+        student,
+        sessionId,
+      });
+      if (alreadyBooked)
+        return res
+          .status(409)
+          .send({ message: "You have already booked this session" });
+
+      const { price } = req.body;
+      const amount = parseInt(price) * 100;
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
     await client.connect();
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
