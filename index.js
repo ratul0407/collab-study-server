@@ -69,6 +69,18 @@ async function run() {
         return res.status(403).send("Forbidden Access! Admin only actions!");
       next();
     };
+
+    const verifyApproval = async (req, res, next) => {
+      const email = req.user?.email;
+      console.log(email);
+      const query = { email };
+      const result = await usersCollection.findOne(query);
+      console.log(result);
+      if (result?.role !== "tutor" && result?.role !== "admin") {
+        res.status(403).send("Forbidden Access!");
+      }
+      next();
+    };
     //get all users
     app.get("/users/:email", verifyToken, verifyAdmin, async (req, res) => {
       const email = req.params.email;
@@ -204,17 +216,27 @@ async function run() {
       res.send(result);
     });
     //update sessions status and price
-    app.patch("/session/:id", verifyToken, verifyAdmin, async (req, res) => {
+    app.patch("/session/:id", verifyToken, verifyApproval, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const status = req.body.status;
       const fee = req.body.fee;
-      const updatedDoc = {
-        $set: {
-          status: status,
-          fee: fee,
-        },
-      };
+      console.log(status, fee);
+      let updatedDoc;
+      if (!fee) {
+        updatedDoc = {
+          $set: {
+            status: status,
+          },
+        };
+      } else {
+        updatedDoc = {
+          $set: {
+            status: status,
+            fee: fee,
+          },
+        };
+      }
 
       const result = await sessionsCollection.updateOne(query, updatedDoc);
       res.send(result);
