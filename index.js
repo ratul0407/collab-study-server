@@ -50,6 +50,7 @@ async function run() {
     const rejectSessionsCollection = database.collection("rejections");
     const bookedSessionCollection = database.collection("bookedSession");
     const reviewsCollection = database.collection("reviews");
+    const materialsCollection = database.collection("materials");
     //verify tutor
     const verifyTutor = async (req, res, next) => {
       const email = req.user?.email;
@@ -376,6 +377,14 @@ async function run() {
       );
 
       const result = await reviewsCollection.insertOne(review);
+      res.send(result);
+    });
+
+    //add a new material
+    app.post("/materials", verifyToken, verifyTutor, async (req, res) => {
+      const material = req.body;
+
+      const result = await materialsCollection.insertOne(material);
       res.send(result);
     });
     await client.connect();
