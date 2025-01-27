@@ -300,15 +300,61 @@ async function run() {
     //book a session
     app.post("/booked-session", verifyToken, async (req, res) => {
       const session = req.body;
+      const student = req.body.student;
+      const alreadyBooked = await bookedSessionCollection.findOne({ student });
+      if (alreadyBooked)
+        return res
+          .status(409)
+          .send({ message: "You have already booked this session" });
       const result = await bookedSessionCollection.insertOne(session);
-      res.send(result);
+      res.send({ message: "Session Booked" });
     });
 
     //get booked sessions based on email
     app.get("/booked-session/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
-      const query = { email };
-      const result = await bookedSessionCollection.find(query).toArray();
+      console.log(email);
+      const result = await bookedSessionCollection
+        .aggregate([
+          {
+            $match: { student: email },
+          },
+          {
+            $addFields: {
+              sessionIdObject: { $toObjectId: "$sessionId" },
+            },
+          },
+          {
+            $lookup: {
+              from: "sessions",
+              localField: "sessionIdObject",
+              foreignField: "_id",
+              as: "sessionData",
+            },
+          },
+          {
+            $unwind: "$sessionData",
+          },
+          {
+            $addFields: {
+              img: "$sessionData.img",
+              title: "$sessionData.title",
+              tutor: "$sessionData.tutor_email",
+              class_start: "$sessionData.class_start",
+              class_end: "$sessionData.class_end",
+              fee: "$sessionData.fee",
+              description: "$sessionData.description",
+              rating: "$sessionData.rating",
+            },
+          },
+          {
+            $project: {
+              sessionData: 0,
+            },
+          },
+        ])
+        .toArray();
+
       res.send(result);
     });
     await client.connect();
