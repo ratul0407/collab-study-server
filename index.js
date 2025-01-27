@@ -453,40 +453,87 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/materials", verifyToken, verifyAdmin, async (req, res) => {
+      const result = await materialsCollection.find().toArray();
+      res.send(result);
+    });
     //get uploaded materials based on email
     app.get("/materials/:email", verifyToken, verifyTutor, async (req, res) => {
       const email = req.params.email;
       console.log(email);
-      const query = { tutor: email };
-      const result = await materialsCollection.find(query).toArray();
+      const result = await materialsCollection
+        .aggregate([
+          {
+            $match: { tutor: email },
+          },
+          {
+            $addFields: {
+              sessionIdObject: { $toObjectId: "$sessionId" },
+            },
+          },
+          {
+            $lookup: {
+              from: "sessions",
+              localField: "sessionIdObject",
+              foreignField: "_id",
+              as: "sessionData",
+            },
+          },
+          {
+            $unwind: "$sessionData",
+          },
+          {
+            $addFields: {
+              sessionTitle: "$sessionData.title",
+              img: "$sessionData.img",
+            },
+          },
+          {
+            $project: {
+              sessionData: 0,
+              sessionIdObject: 0,
+            },
+          },
+        ])
+        .toArray();
       console.log(result);
       res.send(result);
     });
 
     //update a specific material
-    app.patch("/material/:id", verifyToken, verifyTutor, async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const material = req.body;
-      console.log(material);
-      const updatedDoc = {
-        $set: {
-          image: material.image,
-          link: material.link,
-          title: material.title,
-        },
-      };
-      const result = await materialsCollection.updateOne(query, updatedDoc);
-      res.send(result);
-    });
+    app.patch(
+      "/material/:id",
+      verifyToken,
+      verifyApproval,
+      async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const material = req.body;
+        console.log(material);
+        const updatedDoc = {
+          $set: {
+            link: material.link,
+            title: material.title,
+          },
+        };
+        if (material.image) updatedDoc.image = material.image;
+        const result = await materialsCollection.updateOne(query, updatedDoc);
+        res.send(result);
+      }
+    );
 
     //delete a specific material
-    app.delete("/materials/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await materialsCollection.deleteOne(query);
-      res.send(result);
-    });
+    app.delete(
+      "/materials/:id",
+      verifyToken,
+      verifyApproval,
+      async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await materialsCollection.deleteOne(query);
+        res.send(result);
+      }
+    );
     await client.connect();
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
