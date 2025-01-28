@@ -344,7 +344,6 @@ async function run() {
       const query = { role: "tutor" };
       const page = parseInt(req.query.page);
       const limit = parseInt(req.query.limit);
-      console.log(page, limit);
 
       const result = await usersCollection
         .find(query)
@@ -372,7 +371,7 @@ async function run() {
     app.patch("/notes/:id", verifyToken, async (req, res) => {
       const { note } = req.body;
       const id = req.params.id;
-      console.log(note, id);
+
       const query = { _id: new ObjectId(id) };
       const updatedDoc = {
         $set: {
@@ -596,7 +595,8 @@ async function run() {
             title: material.title,
           },
         };
-        if (material.image) updatedDoc.image = material.image;
+
+        if (material.image) updatedDoc.$set.image = material.image;
         const result = await materialsCollection.updateOne(query, updatedDoc);
         res.send(result);
       }
