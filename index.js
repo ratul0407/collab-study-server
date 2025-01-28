@@ -369,14 +369,15 @@ async function run() {
     });
 
     //update a specific note
-    app.patch("notes/:id", verifyToken, async (req, res) => {
+    app.patch("/notes/:id", verifyToken, async (req, res) => {
       const { note } = req.body;
       const id = req.params.id;
+      console.log(note, id);
       const query = { _id: new ObjectId(id) };
       const updatedDoc = {
         $set: {
-          title: note.title,
-          description: note.description,
+          title: note?.title,
+          description: note?.description,
         },
       };
 
