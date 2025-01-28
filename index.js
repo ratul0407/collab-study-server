@@ -13,6 +13,8 @@ const corsOptions = {
     "http://localhost:5174",
     "https://bistro-boss-86657.web.app",
     "https://bistro-boss-86657.firebaseapp.com",
+    "https://collab-study-client-ten.vercel.app",
+    "https://test-delta-beryl-60.vercel.app",
   ],
   credentials: true,
   optionSuccessStatus: 200,
@@ -150,6 +152,7 @@ async function run() {
       const result = await usersCollection.findOne(query);
       res.send({ role: result?.role });
     });
+
     app.post("/jwt", async (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
