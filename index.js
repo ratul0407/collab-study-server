@@ -8,7 +8,12 @@ const port = process.env.PORT || 9000;
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const corsOptions = {
-  origin: ["http://localhost:5173", "http://localhost:5174"],
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "https://bistro-boss-86657.web.app",
+    "https://bistro-boss-86657.firebaseapp.com",
+  ],
   credentials: true,
   optionSuccessStatus: 200,
 };
@@ -614,12 +619,12 @@ async function run() {
         clientSecret: paymentIntent.client_secret,
       });
     });
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
