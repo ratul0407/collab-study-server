@@ -289,7 +289,7 @@ async function run() {
     });
 
     //get a single study session
-    app.get("/session/:id", verifyToken, async (req, res) => {
+    app.get("/session/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await sessionsCollection.findOne(query);
@@ -355,7 +355,7 @@ async function run() {
           description: note.description,
         },
       };
-      console.log(note);
+
       const result = await notesCollection.updateOne(query, updatedDoc);
       res.send(result);
     });
@@ -434,12 +434,54 @@ async function run() {
       res.send(result);
     });
 
+    //get materials based on booked sessions
+
+    app.get(
+      "/booked-session-material/:email",
+      verifyToken,
+      async (req, res) => {
+        const email = req.params.email;
+
+        const result = await bookedSessionCollection
+          .aggregate([
+            {
+              $match: { student: email },
+            },
+            {
+              $lookup: {
+                from: "materials",
+                localField: "sessionId",
+                foreignField: "sessionId",
+                as: "materialsData",
+              },
+            },
+            {
+              $unwind: "$materialsData",
+            },
+            {
+              $addFields: {
+                title: "$materialsData.title",
+                link: "$materialsData.link",
+                image: "$materialsData.image",
+              },
+            },
+            {
+              $project: {
+                materialsData: 0,
+                transactionId: 0,
+              },
+            },
+          ])
+          .toArray();
+        res.send(result);
+      }
+    );
     //add a new review
 
     app.post("/reviews", verifyToken, async (req, res) => {
       const review = req.body;
       const { rating, session } = req.body;
-      console.log(rating, session);
+
       await sessionsCollection.updateOne(
         {
           _id: new ObjectId(session),
@@ -451,6 +493,14 @@ async function run() {
       res.send(result);
     });
 
+    //get review based on sessionId
+    app.get("/reviews", async (req, res) => {
+      const session = req.query.session;
+
+      const query = { session };
+      const result = await reviewsCollection.find(query).toArray();
+      res.send(result);
+    });
     //add a new material
     app.post("/materials", verifyToken, verifyTutor, async (req, res) => {
       const material = req.body;
@@ -465,7 +515,7 @@ async function run() {
     //get uploaded materials based on email
     app.get("/materials/:email", verifyToken, verifyTutor, async (req, res) => {
       const email = req.params.email;
-      console.log(email);
+
       const result = await materialsCollection
         .aggregate([
           {
@@ -501,7 +551,7 @@ async function run() {
           },
         ])
         .toArray();
-      console.log(result);
+
       res.send(result);
     });
 
@@ -514,7 +564,7 @@ async function run() {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) };
         const material = req.body;
-        console.log(material);
+
         const updatedDoc = {
           $set: {
             link: material.link,
@@ -542,7 +592,6 @@ async function run() {
 
     //create payment intent
     app.post("/create-payment-intent", async (req, res) => {
-      console.log(req.body);
       const { sessionId, student } = req.body;
       const alreadyBooked = await bookedSessionCollection.findOne({
         student,
