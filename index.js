@@ -14,7 +14,6 @@ const corsOptions = {
     "https://bistro-boss-86657.web.app",
     "https://bistro-boss-86657.firebaseapp.com",
     "https://collab-study-client-ten.vercel.app",
-    "https://test-delta-beryl-60.vercel.app",
   ],
   credentials: true,
   optionSuccessStatus: 200,
