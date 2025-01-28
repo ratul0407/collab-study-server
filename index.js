@@ -172,6 +172,16 @@ async function run() {
       const result = await usersCollection.updateOne(query, updatedDoc);
       res.send(result);
     });
+
+    //get tutors count
+    app.get("/tutors-count", async (req, res) => {
+      const query = { role: "tutor" };
+
+      const result = await usersCollection.find(query).toArray();
+
+      // const result = await tutors;
+      res.send({ count: result.length });
+    });
     // add a new study session
 
     app.post("/add-session", verifyToken, verifyTutor, async (req, res) => {
@@ -332,7 +342,15 @@ async function run() {
 
     app.get("/tutors", async (req, res) => {
       const query = { role: "tutor" };
-      const result = await usersCollection.find(query).toArray();
+      const page = parseInt(req.query.page);
+      const limit = parseInt(req.query.limit);
+      console.log(page, limit);
+
+      const result = await usersCollection
+        .find(query)
+        .skip(page * limit)
+        .limit(limit)
+        .toArray();
       res.send(result);
     });
     //add a new note to the database
