@@ -13,7 +13,6 @@ const corsOptions = {
     "http://localhost:5174",
     "https://bistro-boss-86657.web.app",
     "https://bistro-boss-86657.firebaseapp.com",
-    "https://collab-study-client-ten.vercel.app",
   ],
   credentials: true,
   optionSuccessStatus: 200,
