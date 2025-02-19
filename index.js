@@ -231,6 +231,12 @@ async function run() {
       res.send(result);
     });
 
+    //get all sessions
+    app.get("/all-sessions", async (req, res) => {
+      const query = { status: "Approved" };
+      const result = await sessionsCollection.find(query).toArray();
+      res.send(result);
+    });
     //update a session
     app.patch(
       "/update-session/:id",
